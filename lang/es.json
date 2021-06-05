@@ -1,5 +1,6 @@
 {
   "map_text": "Mapa",
   "places_text": "Lugares",
-  "app_title": "Mis lugares favoritos"
+  "app_title": "Mis lugares favoritos",
+  "loc_name": "Escribe el nombre del lugar"
 }

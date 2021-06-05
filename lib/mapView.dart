@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:my_fav_locations/blocs/placesBloc.dart';
 import 'appLocalizations.dart';
 
 class MyMapView extends StatefulWidget {
@@ -10,6 +11,9 @@ class MyMapView extends StatefulWidget {
 }
 
 class _MyMapView extends State<MyMapView> {
+  // Variables used to get map coordinates
+  static const LatLng _center = const LatLng(41.1, 1.21);
+  LatLng _lastMapPosition = _center;
 
   // Variable to define GoogleMaps map type
   MapType _currentMapType = MapType.normal;
@@ -20,11 +24,30 @@ class _MyMapView extends State<MyMapView> {
   // Bottom naviagtion bar selected index
   int _currentIndex = 0;
 
+  // Places BLoC instance
+  PlacesBloc _bloc = PlacesBloc();
+
+  TextEditingController _nameController = TextEditingController();
+
   // Set _controller as completed when maps finishes loading
   void _onMapCreated(GoogleMapController controller) async{
     if(_controller.isCompleted != true){
       _controller.complete(controller);
     }
+  }
+
+  // Get center coordinates on map movement
+  void _onCameraMove(CameraPosition position) {
+    _lastMapPosition = position.target;
+    print("Pos" +_lastMapPosition.toString());
+  }
+
+  // Avoid memory leaks removing unused resources
+  @override
+  void dispose() {
+    _bloc.dispose();
+    _nameController.dispose();
+    super.dispose();
   }
 
   // Main Widget tree
@@ -52,6 +75,7 @@ class _MyMapView extends State<MyMapView> {
         children: [
           // Google maps
           GoogleMap(
+            onCameraMove: _onCameraMove,
             zoomControlsEnabled: false,
             mapToolbarEnabled: true,
             mapType: _currentMapType,
@@ -65,33 +89,97 @@ class _MyMapView extends State<MyMapView> {
             ),
           ),
 
-          // Temperature of the current location
-          Padding(
-            padding: EdgeInsets.only(top: 20),
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: Container(
-                decoration: BoxDecoration(
-                    color: Colors.black54,
-                    border: Border.all(
-                      color: Colors.transparent,
-                    ),
-                    borderRadius: BorderRadius.all(Radius.circular(20))
-                ),
-                child: 
-                Padding(
-                  padding: EdgeInsets.all(8),
-                  child:  Text("21 ºC",
-                    style: new TextStyle(
-                      fontFamily: 'MontserratRegular',
-                      color: Colors.white,
-                      fontSize: 18
-                    ),),
-                )
-              ),
+          _currentIndex == 0?
+          temperatureWidget():
+          saveWidget(),
+
+          Center(
+            child: Icon(
+              Icons.close,
+              color: _currentIndex == 1? Colors.black:Colors.transparent,
             ),
           )
         ],
+      ),
+    );
+  }
+
+  // Floating button and name input text widgets used to save a new location
+  Widget saveWidget(){
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Padding(
+          padding: EdgeInsets.fromLTRB(40.0, 15.0, 40.0, 0.0),
+          child: new TextFormField(
+            controller: _nameController,
+            decoration: new InputDecoration(
+              labelText: AppLocalizations.of(context).translate('loc_name'),
+              fillColor: Colors.white,
+              border: new OutlineInputBorder(
+                borderRadius: new BorderRadius.circular(25.0),
+                borderSide: new BorderSide(
+                ),
+              ),
+              //fillColor: Colors.green
+            ),
+            style: new TextStyle(
+              fontFamily: "MontserratRegular",
+            ),
+          ),
+        ),
+
+        Padding(
+            padding: EdgeInsets.only(bottom: 20),
+            child:
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Padding(
+                padding: EdgeInsets.all(8),
+                child:  FloatingActionButton(
+                  onPressed: () {
+                    // Trigger the storage location event
+                    _bloc.sendEvent.add(SavePlace(_nameController.text, _lastMapPosition.latitude, _lastMapPosition.longitude));
+                  },
+                  child: Icon(
+                    Icons.save,
+                    color: Colors.black54,
+                  ),
+                  backgroundColor: Colors.cyan,
+                ),
+              ),
+            )
+        ),
+      ],
+    );
+  }
+
+  // Temperature of the current location widget
+  Widget temperatureWidget(){
+    return Padding(
+      padding: EdgeInsets.only(top: 20),
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: Container(
+          decoration: BoxDecoration(
+              color: Colors.black54,
+              border: Border.all(
+                color: Colors.transparent,
+              ),
+              borderRadius: BorderRadius.all(Radius.circular(20))
+          ),
+          child:
+          Padding(
+            padding: EdgeInsets.all(8),
+            child:  Text("21 ºC",
+              style: new TextStyle(
+                  fontFamily: 'MontserratRegular',
+                  color: Colors.white,
+                  fontSize: 18
+              ),
+            ),
+          )
+        ),
       ),
     );
   }

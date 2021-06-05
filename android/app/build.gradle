@@ -41,6 +41,9 @@ android {
         targetSdkVersion 30
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
+
+        // Enabling multi dex support.
+        multiDexEnabled true
     }
 
     buildTypes {
