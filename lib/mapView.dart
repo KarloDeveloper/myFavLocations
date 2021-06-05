@@ -45,11 +45,12 @@ class _MyMapView extends State<MyMapView> {
     );
   }
 
-  // GoogleMaps widget
+  // GoogleMaps with current location temperature widget
   Widget googleMapsWidget() {
     return Container(
       child: Stack(
         children: [
+          // Google maps
           GoogleMap(
             zoomControlsEnabled: false,
             mapToolbarEnabled: true,
@@ -63,6 +64,33 @@ class _MyMapView extends State<MyMapView> {
               zoom: 15.0,
             ),
           ),
+
+          // Temperature of the current location
+          Padding(
+            padding: EdgeInsets.only(top: 20),
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: Container(
+                decoration: BoxDecoration(
+                    color: Colors.black54,
+                    border: Border.all(
+                      color: Colors.transparent,
+                    ),
+                    borderRadius: BorderRadius.all(Radius.circular(20))
+                ),
+                child: 
+                Padding(
+                  padding: EdgeInsets.all(8),
+                  child:  Text("21 ºC",
+                    style: new TextStyle(
+                      fontFamily: 'MontserratRegular',
+                      color: Colors.white,
+                      fontSize: 18
+                    ),),
+                )
+              ),
+            ),
+          )
         ],
       ),
     );
