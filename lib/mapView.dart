@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'appLocalizations.dart';
 
 class MyMapView extends StatefulWidget {
   @override
@@ -31,7 +32,13 @@ class _MyMapView extends State<MyMapView> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: Text("My Favourite Locations"),
+          title: Text(
+            AppLocalizations.of(context).translate('app_title'),
+            style: new TextStyle(
+              fontFamily: 'MontserratBold',
+              color: Colors.black54,
+            ),
+          ),
         ),
         body: googleMapsWidget(),
         bottomNavigationBar: bottomNavBar(),
@@ -78,15 +85,21 @@ class _MyMapView extends State<MyMapView> {
         items: <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.map),
-            label: Text("Mapa"
-            ).data,
+            label: AppLocalizations.of(context).translate('map_text'),
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.add_location),
-            label: Text("Lugares"
-            ).data,
+            label: AppLocalizations.of(context).translate('places_text'),
           ),
         ],
+        selectedLabelStyle: TextStyle(
+          fontFamily: 'MontserratBold',
+          fontSize: 14,
+        ),
+        unselectedLabelStyle: TextStyle(
+          fontFamily: 'MontserratRegular',
+          fontSize: 14,
+        ),
         currentIndex: _currentIndex,
         onTap: (index){
           setState(() {
