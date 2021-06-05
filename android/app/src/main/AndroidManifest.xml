@@ -37,5 +37,9 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
+        <!-- Google Maps API key created from the Google Cloud Platform -->
+        <meta-data android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyAXe8p1c2-pPsu-5itdkg0St3rjOVIJLOk"/>
     </application>
 </manifest>
