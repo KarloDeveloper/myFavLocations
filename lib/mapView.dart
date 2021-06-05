@@ -16,6 +16,9 @@ class _MyMapView extends State<MyMapView> {
   // Create a GoogleMaps Completer variable
   Completer<GoogleMapController> _controller = Completer();
 
+  // Bottom naviagtion bar selected index
+  int _currentIndex = 0;
+
   // Set _controller as completed when maps finishes loading
   void _onMapCreated(GoogleMapController controller) async{
     if(_controller.isCompleted != true){
@@ -31,6 +34,7 @@ class _MyMapView extends State<MyMapView> {
           title: Text("My Favourite Locations"),
         ),
         body: googleMapsWidget(),
+        bottomNavigationBar: bottomNavBar(),
     );
   }
 
@@ -53,6 +57,44 @@ class _MyMapView extends State<MyMapView> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // Bottom navigation bar used to navigate to the 'Map' or 'Places' screens
+  Widget bottomNavBar(){
+    return Container(
+      decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black45,
+              blurRadius: 5.0,
+            )
+          ]
+      ),
+
+      child:  BottomNavigationBar(
+        elevation: 10.0,
+        items: <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.map),
+            label: Text("Mapa"
+            ).data,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.add_location),
+            label: Text("Lugares"
+            ).data,
+          ),
+        ],
+        currentIndex: _currentIndex,
+        onTap: (index){
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        selectedItemColor: Colors.cyan,
+        type: BottomNavigationBarType.fixed,
       ),
     );
   }
