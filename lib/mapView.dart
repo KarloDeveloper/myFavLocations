@@ -6,6 +6,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:my_fav_locations/blocs/placesBloc.dart';
 import 'appLocalizations.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 class MyMapView extends StatefulWidget {
   @override
@@ -93,7 +94,7 @@ class _MyMapView extends State<MyMapView> {
     return Container(
       child: Stack(
         children: [
-          // Google maps
+          // Google maps Stream wrapper to listen changes from BLoC
           _currentPosition == null?
           Center(
             child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Colors.cyan)),
@@ -124,10 +125,15 @@ class _MyMapView extends State<MyMapView> {
             },
           ),
 
+          // Temperature widget to display temp data from open weather API
           temperatureWidget(),
 
+          // Save button display handling depending on tab index
           _currentIndex == 0? Container() : saveWidget(),
 
+          /* Icon to show the center of the screen, this helps saving new places
+             with better accuracy
+           */
           Center(
             child: Icon(
               Icons.close,
@@ -145,7 +151,7 @@ class _MyMapView extends State<MyMapView> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Padding(
-          padding: EdgeInsets.fromLTRB(10.0, 70.0, 10.0, 0.0),
+          padding: EdgeInsets.fromLTRB(60.0, 10.0, 60.0, 0.0),
           child: new TextFormField(
             controller: _nameController,
             decoration: new InputDecoration(
@@ -172,15 +178,33 @@ class _MyMapView extends State<MyMapView> {
               padding: EdgeInsets.all(8),
               child:  FloatingActionButton(
                 onPressed: () {
-                  // Avoid storing a place with an empty name
+                  // Avoid string a place with an empty name
                   if(_nameController.text.length == 0){
-                    _nameController.text =
-                        AppLocalizations.of(context).translate('no_name')
-                            +": "+getRandomString(5);
-                  }
+                    // Add feedback when no name is set for a place to be saved
+                    Fluttertoast.showToast(
+                        msg: AppLocalizations.of(context).translate('loc_unnamed'),
+                        toastLength: Toast.LENGTH_LONG,
+                        gravity: ToastGravity.CENTER,
+                        timeInSecForIosWeb: 4,
+                        backgroundColor: Colors.black38,
+                        textColor: Colors.white,
+                        fontSize: 16.0
+                    );
+                  }else{
+                    // Trigger the storage location event
+                    _bloc.sendEvent.add(SavePlace(_nameController.text, _lastMapPosition.latitude, _lastMapPosition.longitude));
 
-                  // Trigger the storage location event
-                  _bloc.sendEvent.add(SavePlace(_nameController.text, _lastMapPosition.latitude, _lastMapPosition.longitude));
+                    // Add feedback when a place is saved
+                    Fluttertoast.showToast(
+                        msg: AppLocalizations.of(context).translate('loc_saved'),
+                        toastLength: Toast.LENGTH_LONG,
+                        gravity: ToastGravity.CENTER,
+                        timeInSecForIosWeb: 4,
+                        backgroundColor: Colors.black38,
+                        textColor: Colors.white,
+                        fontSize: 16.0
+                    );
+                  }
 
                   // Clear the text field once a new place has been saved
                   _nameController.clear();
@@ -221,7 +245,7 @@ class _MyMapView extends State<MyMapView> {
                   child:  Text(AppLocalizations.of(context).translate('loc_temp'),
                     style: new TextStyle(
                         fontFamily: 'MontserratRegular',
-                        color: Colors.black54,
+                        color: _currentIndex == 0? Colors.black54: Colors.transparent,
                         fontSize: 18
                     ),
                   ),
@@ -232,7 +256,7 @@ class _MyMapView extends State<MyMapView> {
                   child:  Text("${snapshot.data} ºC",
                     style: new TextStyle(
                         fontFamily: 'MontserratRegular',
-                        color: Colors.black54,
+                        color: _currentIndex == 0? Colors.black54: Colors.transparent,
                         fontSize: 24
                     ),
                   ),

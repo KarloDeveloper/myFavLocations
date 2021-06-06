@@ -4,5 +4,7 @@
   "app_title": "My favourite places",
   "loc_name": "Set location name",
   "no_name": "Unnamed",
-  "loc_temp": "Getting temperature..."
+  "loc_temp": "Getting temperature...",
+  "loc_saved": "Place saved!",
+  "loc_unnamed": "Please, write the location name to be saved"
 }

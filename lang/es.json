@@ -4,5 +4,7 @@
   "app_title": "Mis lugares favoritos",
   "loc_name": "Escribe el nombre del lugar",
   "no_name": "Sin nombre",
-  "loc_temp": "Obteniendo temperatura..."
+  "loc_temp": "Obteniendo temperatura...",
+  "loc_saved": "¡Lugar guardado!",
+  "loc_unnamed": "Por favor, escribe el nombre del lugar a guardar"
 }

@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geolocator/geolocator.dart';
 import 'dart:async';
@@ -126,10 +125,7 @@ class PlacesBloc {
 
     String tempQuery = 'https://api.openweathermap.org/data/2.5/weather?lat=${position.latitude}&lon=${position.longitude}&appid=db01a058045155a6002827531e3dee91&units=metric';
     http.Response responseGetParams = await http.get(Uri.parse(tempQuery),headers: {"Accept": "application/json"});
-
     var data = jsonDecode(responseGetParams.body);
-    print(data);
-    print(data['main']['temp']);
 
     // Add the newer info to the stream to let the UI update its content
     _output2.add(data['main']['temp'].toString());
