@@ -1,6 +1,10 @@
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:geolocator/geolocator.dart';
 import 'dart:async';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:http/http.dart' as http;
 
 // Base BLoC class
 class BlocBase {}
@@ -15,7 +19,7 @@ class SavePlace extends BlocBase {
 }
 
 class GetPlaces extends BlocBase{}
-
+class GetTemp extends BlocBase{}
 class ClearMarkers extends BlocBase{}
 
 class PlacesBloc {
@@ -25,9 +29,11 @@ class PlacesBloc {
   // BLoC input and output Listeners
   StreamController<BlocBase> _input = StreamController();
   StreamController<Set<Marker>> _output = StreamController();
+  StreamController<String> _output2 = StreamController();
 
   // Result stream from processing the event
   Stream<Set<Marker>> get saveStream => _output.stream;
+  Stream<String>      get tempStream => _output2.stream;
 
   // Listen to new events coming from the UI
   StreamSink<BlocBase> get sendEvent => _input.sink;
@@ -44,6 +50,7 @@ class PlacesBloc {
   void dispose(){
     _input.close();
     _output.close();
+    _output2.close();
   }
 
   // Private method to prevent manually callings from outside
@@ -55,6 +62,8 @@ class PlacesBloc {
     }else if (event is GetPlaces){
       // Get all saved places from Firebase
       await getPlaces();
+    }else if (event is GetTemp){
+      await getTemperature();
     }else{
       // Avoid showing any marker while in the save tab
       markers.clear();
@@ -108,6 +117,22 @@ class PlacesBloc {
 
     // Add the newer info to the stream to let the UI update its content
     _output.add(markers);
+  }
+
+  // Get current location temperature using open weather
+  Future<void> getTemperature() async {
+    var position = await GeolocatorPlatform.instance
+        .getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+
+    String tempQuery = 'https://api.openweathermap.org/data/2.5/weather?lat=${position.latitude}&lon=${position.longitude}&appid=db01a058045155a6002827531e3dee91&units=metric';
+    http.Response responseGetParams = await http.get(Uri.parse(tempQuery),headers: {"Accept": "application/json"});
+
+    var data = jsonDecode(responseGetParams.body);
+    print(data);
+    print(data['main']['temp']);
+
+    // Add the newer info to the stream to let the UI update its content
+    _output2.add(data['main']['temp'].toString());
   }
 }
 

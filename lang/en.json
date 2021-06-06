@@ -3,5 +3,6 @@
   "places_text": "Places",
   "app_title": "My favourite places",
   "loc_name": "Set location name",
-  "no_name": "Unnamed"
+  "no_name": "Unnamed",
+  "loc_temp": "Getting temperature..."
 }

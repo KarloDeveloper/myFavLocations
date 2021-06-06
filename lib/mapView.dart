@@ -124,9 +124,9 @@ class _MyMapView extends State<MyMapView> {
             },
           ),
 
-          _currentIndex == 0?
-          temperatureWidget():
-          saveWidget(),
+          temperatureWidget(),
+
+          _currentIndex == 0? Container() : saveWidget(),
 
           Center(
             child: Icon(
@@ -145,7 +145,7 @@ class _MyMapView extends State<MyMapView> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Padding(
-          padding: EdgeInsets.fromLTRB(40.0, 15.0, 40.0, 0.0),
+          padding: EdgeInsets.fromLTRB(10.0, 70.0, 10.0, 0.0),
           child: new TextFormField(
             controller: _nameController,
             decoration: new InputDecoration(
@@ -201,28 +201,45 @@ class _MyMapView extends State<MyMapView> {
   // Temperature of the current location widget
   Widget temperatureWidget(){
     return Padding(
-      padding: EdgeInsets.only(top: 20),
+      padding: EdgeInsets.only(top: 10, left: 10),
       child: Align(
         alignment: Alignment.topCenter,
         child: Container(
           decoration: BoxDecoration(
-              color: Colors.black54,
+              color: Colors.transparent,
               border: Border.all(
                 color: Colors.transparent,
               ),
               borderRadius: BorderRadius.all(Radius.circular(20))
           ),
-          child:
-          Padding(
-            padding: EdgeInsets.all(8),
-            child:  Text("21 ºC",
-              style: new TextStyle(
-                  fontFamily: 'MontserratRegular',
-                  color: Colors.white,
-                  fontSize: 18
-              ),
-            ),
-          )
+          child: StreamBuilder<String>(
+            stream: _bloc.tempStream,
+            builder: (context, snapshot){
+              if (!snapshot.hasData) {
+                return Padding(
+                  padding: EdgeInsets.all(8),
+                  child:  Text(AppLocalizations.of(context).translate('loc_temp'),
+                    style: new TextStyle(
+                        fontFamily: 'MontserratRegular',
+                        color: Colors.black54,
+                        fontSize: 18
+                    ),
+                  ),
+                );
+              }else{
+                return Padding(
+                  padding: EdgeInsets.all(8),
+                  child:  Text("${snapshot.data} ºC",
+                    style: new TextStyle(
+                        fontFamily: 'MontserratRegular',
+                        color: Colors.black54,
+                        fontSize: 24
+                    ),
+                  ),
+                );
+              }
+            },
+          ),
         ),
       ),
     );
@@ -289,5 +306,8 @@ class _MyMapView extends State<MyMapView> {
       _currentPosition = LatLng(position.latitude, position.longitude);
       _lastMapPosition = _currentPosition;
     });
+
+    // Trigger the get temperature event to show current location temperature
+    _bloc.sendEvent.add(GetTemp());
   }
 }
