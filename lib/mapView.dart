@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:my_fav_locations/blocs/placesBloc.dart';
 import 'appLocalizations.dart';
@@ -15,12 +16,14 @@ class _MyMapView extends State<MyMapView> {
   // Variables used to get map coordinates
   static const LatLng _center = const LatLng(41.1, 1.21);
   LatLng _lastMapPosition = _center;
+  LatLng _currentPosition;
 
   // Variable to define GoogleMaps map type
   MapType _currentMapType = MapType.normal;
 
-  // Create a GoogleMaps Completer variable
+  // Create a GoogleMaps Completer variable and a camera controller
   Completer<GoogleMapController> _controller = Completer();
+  GoogleMapController mapControllerCamera;
 
   // Bottom naviagtion bar selected index
   int _currentIndex = 0;
@@ -52,6 +55,8 @@ class _MyMapView extends State<MyMapView> {
 
   @override
   void initState() {
+    getUserLocation();
+
     // Trigger the get locations event at the start of the app to get any place saved
     _bloc.sendEvent.add(GetPlaces());
     super.initState();
@@ -89,6 +94,10 @@ class _MyMapView extends State<MyMapView> {
       child: Stack(
         children: [
           // Google maps
+          _currentPosition == null?
+          Center(
+            child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Colors.cyan)),
+          ):
           StreamBuilder<Set<Marker>>(
             stream: _bloc.saveStream,
             builder: (context, snapshot){
@@ -107,7 +116,7 @@ class _MyMapView extends State<MyMapView> {
                   compassEnabled: true,
                   markers: snapshot.data,
                   initialCameraPosition: CameraPosition(
-                    target: LatLng(41.1, 1.24),
+                    target: _currentPosition,
                     zoom: 15.0,
                   ),
                 );
@@ -156,35 +165,34 @@ class _MyMapView extends State<MyMapView> {
         ),
 
         Padding(
-            padding: EdgeInsets.only(bottom: 20),
-            child:
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: Padding(
-                padding: EdgeInsets.all(8),
-                child:  FloatingActionButton(
-                  onPressed: () {
-                    // Avoid storing a place with an empty name
-                    if(_nameController.text.length == 0){
-                      _nameController.text =
-                          AppLocalizations.of(context).translate('no_name')
-                              +": "+getRandomString(5);
-                    }
+          padding: EdgeInsets.only(bottom: 20),
+          child: Align(
+            alignment: Alignment.bottomCenter,
+            child: Padding(
+              padding: EdgeInsets.all(8),
+              child:  FloatingActionButton(
+                onPressed: () {
+                  // Avoid storing a place with an empty name
+                  if(_nameController.text.length == 0){
+                    _nameController.text =
+                        AppLocalizations.of(context).translate('no_name')
+                            +": "+getRandomString(5);
+                  }
 
-                    // Trigger the storage location event
-                    _bloc.sendEvent.add(SavePlace(_nameController.text, _lastMapPosition.latitude, _lastMapPosition.longitude));
+                  // Trigger the storage location event
+                  _bloc.sendEvent.add(SavePlace(_nameController.text, _lastMapPosition.latitude, _lastMapPosition.longitude));
 
-                    // Clear the text field once a new place has been saved
-                    _nameController.clear();
-                  },
-                  child: Icon(
-                    Icons.save,
-                    color: Colors.black54,
-                  ),
-                  backgroundColor: Colors.cyan,
+                  // Clear the text field once a new place has been saved
+                  _nameController.clear();
+                },
+                child: Icon(
+                  Icons.save,
+                  color: Colors.black54,
                 ),
+                backgroundColor: Colors.cyan,
               ),
-            )
+            ),
+          )
         ),
       ],
     );
@@ -270,5 +278,16 @@ class _MyMapView extends State<MyMapView> {
         type: BottomNavigationBarType.fixed,
       ),
     );
+  }
+
+  // Function used to get actual device location using the GPS
+  void getUserLocation() async {
+    var position = await GeolocatorPlatform.instance
+        .getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+
+    setState(() {
+      _currentPosition = LatLng(position.latitude, position.longitude);
+      _lastMapPosition = _currentPosition;
+    });
   }
 }
