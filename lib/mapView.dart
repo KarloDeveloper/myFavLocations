@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -27,7 +28,11 @@ class _MyMapView extends State<MyMapView> {
   // Places BLoC instance
   PlacesBloc _bloc = PlacesBloc();
 
+  // Create a controller of the place name textfield
   TextEditingController _nameController = TextEditingController();
+
+  // Define constants for random id generation for unnamed saved places
+  String _chars = 'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890';
 
   // Set _controller as completed when maps finishes loading
   void _onMapCreated(GoogleMapController controller) async{
@@ -39,7 +44,17 @@ class _MyMapView extends State<MyMapView> {
   // Get center coordinates on map movement
   void _onCameraMove(CameraPosition position) {
     _lastMapPosition = position.target;
-    print("Pos" +_lastMapPosition.toString());
+  }
+
+  // Random ID calculation function to unnamed saved places
+  String getRandomString(int length) => String.fromCharCodes(Iterable.generate(
+      length, (_) => _chars.codeUnitAt(Random().nextInt(_chars.length))));
+
+  @override
+  void initState() {
+    // Trigger the get locations event at the start of the app to get any place saved
+    _bloc.sendEvent.add(GetPlaces());
+    super.initState();
   }
 
   // Avoid memory leaks removing unused resources
@@ -74,19 +89,30 @@ class _MyMapView extends State<MyMapView> {
       child: Stack(
         children: [
           // Google maps
-          GoogleMap(
-            onCameraMove: _onCameraMove,
-            zoomControlsEnabled: false,
-            mapToolbarEnabled: true,
-            mapType: _currentMapType,
-            onMapCreated: _onMapCreated,
-            myLocationEnabled: true,
-            myLocationButtonEnabled: true,
-            compassEnabled: true,
-            initialCameraPosition: CameraPosition(
-              target: LatLng(41.1, 1.24),
-              zoom: 15.0,
-            ),
+          StreamBuilder<Set<Marker>>(
+            stream: _bloc.saveStream,
+            builder: (context, snapshot){
+              if (!snapshot.hasData) {
+                return Center(
+                    child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Colors.cyan)));
+              }else{
+                return GoogleMap(
+                  onCameraMove: _onCameraMove,
+                  zoomControlsEnabled: false,
+                  mapToolbarEnabled: true,
+                  mapType: _currentMapType,
+                  onMapCreated: _onMapCreated,
+                  myLocationEnabled: true,
+                  myLocationButtonEnabled: true,
+                  compassEnabled: true,
+                  markers: snapshot.data,
+                  initialCameraPosition: CameraPosition(
+                    target: LatLng(41.1, 1.24),
+                    zoom: 15.0,
+                  ),
+                );
+              }
+            },
           ),
 
           _currentIndex == 0?
@@ -138,8 +164,18 @@ class _MyMapView extends State<MyMapView> {
                 padding: EdgeInsets.all(8),
                 child:  FloatingActionButton(
                   onPressed: () {
+                    // Avoid storing a place with an empty name
+                    if(_nameController.text.length == 0){
+                      _nameController.text =
+                          AppLocalizations.of(context).translate('no_name')
+                              +": "+getRandomString(5);
+                    }
+
                     // Trigger the storage location event
                     _bloc.sendEvent.add(SavePlace(_nameController.text, _lastMapPosition.latitude, _lastMapPosition.longitude));
+
+                    // Clear the text field once a new place has been saved
+                    _nameController.clear();
                   },
                   child: Icon(
                     Icons.save,
@@ -221,6 +257,14 @@ class _MyMapView extends State<MyMapView> {
           setState(() {
             _currentIndex = index;
           });
+
+          if (_currentIndex == 0){
+            // Trigger the get locations event
+            _bloc.sendEvent.add(GetPlaces());
+          }else{
+            // Clear Markers list when in Save Places screen
+            _bloc.sendEvent.add(ClearMarkers());
+          }
         },
         selectedItemColor: Colors.cyan,
         type: BottomNavigationBarType.fixed,

@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 // Base BLoC class
 class BlocBase {}
@@ -13,19 +14,26 @@ class SavePlace extends BlocBase {
   SavePlace(this.name, this.lat, this.lon);
 }
 
+class GetPlaces extends BlocBase{}
+
+class ClearMarkers extends BlocBase{}
+
 class PlacesBloc {
   // Create a CollectionReference called places that references the firestore collection
   CollectionReference places = FirebaseFirestore.instance.collection('places');
 
-  // Listeners
+  // BLoC input and output Listeners
   StreamController<BlocBase> _input = StreamController();
-  StreamController<int> _output = StreamController();
+  StreamController<Set<Marker>> _output = StreamController();
 
   // Result stream from processing the event
-  Stream<int> get saveStream => _output.stream;
+  Stream<Set<Marker>> get saveStream => _output.stream;
 
   // Listen to new events coming from the UI
   StreamSink<BlocBase> get sendEvent => _input.sink;
+
+  // Create markers list to allocate all saved places
+  Set<Marker> markers = Set();
 
   // Event processing
   PlacesBloc(){
@@ -44,15 +52,17 @@ class PlacesBloc {
     if (event is SavePlace){
       // Firebase saving process
       await addPlace(event.name, event.lon, event.lat);
-
+    }else if (event is GetPlaces){
       // Get all saved places from Firebase
-      //getPlaces();
+      await getPlaces();
+    }else{
+      // Avoid showing any marker while in the save tab
+      markers.clear();
+      _output.add(markers);
     }
-
-    // Add the newer info to the stream to let the UI update its content
-    _output.add(0);
   }
 
+  // Add a new saved place to Firebase as new document of the collection 'Places'
   Future<void> addPlace(String name, double longitude, double latitude) {
     // Call the places CollectionReference to add a new place
     return places
@@ -62,15 +72,42 @@ class PlacesBloc {
     });
   }
 
-  /*Future<void> getPlaces() {
-    // Call the user's CollectionReference to add a new user
-    return places
-        .add({
-      'name': "Barcelona", // John Doe
-      'latlon': "41.1, 1.31", // Stokes and Sons
-    })
-        .then((value) => print("User Added"))
-        .catchError((error) => print("Failed to add user: $error"));
-  }*/
+  // Get all documents from Firebase under 'Places' collection
+  Future<void> getPlaces() async {
+    // Used to decode Geo location point coming from my saved place
+    GeoPoint locationPoint;
+
+    // Get all documents under 'places' collection, each document is a place saved
+    QuerySnapshot snapshot = await FirebaseFirestore.instance.collection('places').get();
+
+    // Parse the snapshot into a Map
+    Map<int, QueryDocumentSnapshot<Object>> myPlacesList = snapshot.docs.asMap();
+
+    // Marker of the saved place
+    Marker marker;
+
+    // Clear markers list before adding places coming from Firebase
+    markers.clear();
+
+    // Loop through all places
+    for(var place in myPlacesList.values) {
+      locationPoint = place.get('latlon');
+
+      // Create a new marker with the info received from FireBase
+      marker = Marker(
+          infoWindow: InfoWindow(title: place.get('name'), snippet: locationPoint.latitude.abs().toString()+" "+locationPoint.longitude.abs().toString()),
+          markerId: MarkerId(place.get('name')),
+          position: LatLng(locationPoint.latitude, locationPoint.longitude),
+          icon: BitmapDescriptor.defaultMarkerWithHue(
+              BitmapDescriptor.hueCyan),
+      );
+
+      // Add the saved place into the markers list
+      markers.add(marker);
+    }
+
+    // Add the newer info to the stream to let the UI update its content
+    _output.add(markers);
+  }
 }
 

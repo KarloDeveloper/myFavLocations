@@ -2,5 +2,6 @@
   "map_text": "Map",
   "places_text": "Places",
   "app_title": "My favourite places",
-  "loc_name": "Set location name"
+  "loc_name": "Set location name",
+  "no_name": "Unnamed"
 }
